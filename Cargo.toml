@@ -11,7 +11,4 @@ serde_json = "1"
 reqwest = { version = "0.12", features = ["json"] }
 jsonwebtoken = "9"
 dotenvy = "0.15"
-chrono = "=0.4.38"
-time = "=0.3.46"
-time-core = "=0.1.7"
-time-macros = "=0.2.26"
+chrono = "0.4"
