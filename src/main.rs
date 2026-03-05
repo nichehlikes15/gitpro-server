@@ -49,7 +49,7 @@ struct CallbackQueryParameters {
 
 async fn auth_github(
     Query(params): Query<CallbackQueryParameters>
-) -> Result<Json<ApiTokenResponse>, StatusCode> {
+) -> Result<Redirect, StatusCode> {
     let client = Client::new();
     let client_id = std::env::var("GITHUB_CLIENT_ID")
         .expect("GITHUB_CLIENT_ID missing");
