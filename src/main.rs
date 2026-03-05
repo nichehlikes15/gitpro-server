@@ -81,16 +81,11 @@ async fn auth_github(
     /* 2️⃣ Use GitHub token to fetch user */
     let user_res = client
         .get("https://api.github.com/user")
-        .header("Authorization", format!("token {}", token_body.access_token))
-        .header("Accept", "application/vnd.github+json")
+        .header("Authorization", format!("Bearer {}", token_body.access_token))
         .header("User-Agent", "gitpro-webserver")
         .send()
         .await
         .map_err(|_| StatusCode::UNAUTHORIZED)?;
-
-    println!("GitHub access token: {}", token_body.access_token);
-    let text = token_res.text().await.unwrap();
-    println!("Token response: {}", text);
 
     if !user_res.status().is_success() {
         return Err(StatusCode::UNAUTHORIZED);
