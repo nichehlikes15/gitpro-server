@@ -1,5 +1,5 @@
 use axum::{
-    Json, Router, http::StatusCode, routing::{get, post}
+    Json, Router, extract::Query, http::StatusCode, routing::{get, post}
 };
 use serde::{Deserialize, Serialize};
 use jsonwebtoken::{encode, Header, EncodingKey};
@@ -46,11 +46,15 @@ async fn main() {
         .expect("Server error");
 }
 
+#[derive(Deserialize)]
+struct CallbackQueryParameters {
+    code: String
+}
+
 async fn auth_github(
-    Json(payload): Json<OAuthRequest>,
+    Query(params): Query<CallbackQueryParameters>
 ) -> Result<Json<ApiTokenResponse>, StatusCode> {
     let client = Client::new();
-
     let client_id = std::env::var("GITHUB_CLIENT_ID")
         .expect("GITHUB_CLIENT_ID missing");
     let client_secret = std::env::var("GITHUB_CLIENT_SECRET")
@@ -63,7 +67,7 @@ async fn auth_github(
         .json(&serde_json::json!({
             "client_id": client_id,
             "client_secret": client_secret,
-            "code": payload.code,
+            "code": params.code,
         }))
         .send()
         .await
