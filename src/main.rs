@@ -37,11 +37,11 @@ async fn main() {
     let app = Router::new()
         .route("/auth/github", post(auth_github));
 
-    let listener = TcpListener::bind("127.0.0.1:3000")
+    let listener = TcpListener::bind("0.0.0.0:3000")
         .await
         .expect("Failed to bind address");
 
-    println!("Server running on http://127.0.0.1:3000");
+    println!("Server running on http://0.0.0.0:3000");
 
     axum::serve(listener, app)
         .await
