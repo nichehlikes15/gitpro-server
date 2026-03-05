@@ -1,5 +1,5 @@
 use axum::{
-    Json, Router, extract::Query, http::StatusCode, routing::{get, post}
+    Json, Router, extract::Query, http::StatusCode, response::Redirect, routing::{get, post}
 };
 use serde::{Deserialize, Serialize};
 use jsonwebtoken::{encode, Header, EncodingKey};
@@ -12,10 +12,6 @@ struct OAuthRequest {
     code: String,
 }
 
-#[derive(Serialize)]
-struct ApiTokenResponse {
-    token: String,
-}
 
 #[derive(Serialize, Deserialize)]
 struct Claims {
@@ -120,6 +116,5 @@ async fn auth_github(
         &claims,
         &EncodingKey::from_secret(jwt_secret.as_bytes()),
     ).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    Ok(Json(ApiTokenResponse { token }))
+    Ok(Redirect::to(&format!("127.0.0.1:49152/callback?token={token}")))
 }
