@@ -116,5 +116,5 @@ async fn auth_github(
         &claims,
         &EncodingKey::from_secret(jwt_secret.as_bytes()),
     ).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    Ok(Redirect::to(&format!("127.0.0.1:49152/callback?token={token}")))
+    Ok(Redirect::to(&format!("127.0.0.1:49152/callback?code={token}")))
 }
