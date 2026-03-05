@@ -1,7 +1,5 @@
 use axum::{
-    routing::post,
-    Json, Router,
-    http::StatusCode,
+    Json, Router, http::StatusCode, routing::{get, post}
 };
 use serde::{Deserialize, Serialize};
 use jsonwebtoken::{encode, Header, EncodingKey};
@@ -35,7 +33,7 @@ async fn main() {
     dotenvy::dotenv().ok();
 
     let app = Router::new()
-        .route("/auth/github", post(auth_github));
+        .route("/auth/github", get(auth_github));
 
     let listener = TcpListener::bind("0.0.0.0:3000")
         .await
