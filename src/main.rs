@@ -1,17 +1,17 @@
 use axum::{
-    Router,
     extract::Query,
     http::StatusCode,
     response::Redirect,
     routing::get,
+    Router,
 };
-use serde::Deserialize;
 use reqwest::Client;
+use serde::Deserialize;
 use tokio::net::TcpListener;
 
 #[derive(Deserialize)]
-struct CallbackQueryParameters {
-    code: String,
+struct CallbackQuery {
+    code: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -26,39 +26,60 @@ async fn main() {
     dotenvy::dotenv().ok();
 
     let app = Router::new()
+        .route("/login", get(login))
         .route("/auth/github", get(auth_github));
 
     let listener = TcpListener::bind("0.0.0.0:3000")
         .await
         .expect("Failed to bind address");
 
-    println!("Server running on http://0.0.0.0:3000");
+    println!("Server running on http://localhost:3000");
 
     axum::serve(listener, app)
         .await
         .expect("Server error");
 }
 
+async fn login() -> Redirect {
+    let client_id =
+        std::env::var("GITHUB_CLIENT_ID").expect("GITHUB_CLIENT_ID missing");
+
+    let redirect = format!(
+        "https://github.com/login/oauth/authorize?client_id={}&scope=read:user user:email",
+        client_id
+    );
+
+    Redirect::to(&redirect)
+}
+
 async fn auth_github(
-    Query(params): Query<CallbackQueryParameters>
+    Query(params): Query<CallbackQuery>,
 ) -> Result<Redirect, StatusCode> {
+    let code = match params.code {
+        Some(c) => c,
+        None => {
+            println!("OAuth code missing");
+            return Err(StatusCode::BAD_REQUEST);
+        }
+    };
 
     let client = Client::new();
 
-    let client_id = std::env::var("GITHUB_CLIENT_ID")
-        .expect("GITHUB_CLIENT_ID missing");
+    let client_id =
+        std::env::var("GITHUB_CLIENT_ID").expect("GITHUB_CLIENT_ID missing");
 
     let client_secret = std::env::var("GITHUB_CLIENT_SECRET")
         .expect("GITHUB_CLIENT_SECRET missing");
 
-    // 1️⃣ Exchange code for GitHub access token
+    /* Exchange code → GitHub access token */
+
     let token_res = client
         .post("https://github.com/login/oauth/access_token")
         .header("Accept", "application/json")
         .json(&serde_json::json!({
             "client_id": client_id,
             "client_secret": client_secret,
-            "code": params.code
+            "code": code
         }))
         .send()
         .await
@@ -74,12 +95,16 @@ async fn auth_github(
         .await
         .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
-    println!("GitHub access token received");
+    println!("Received GitHub token");
 
-    // 2️⃣ Verify token by requesting GitHub user
+    /* Verify token by requesting user */
+
     let user_res = client
         .get("https://api.github.com/user")
-        .header("Authorization", format!("token {}", token_body.access_token))
+        .header(
+            "Authorization",
+            format!("token {}", token_body.access_token),
+        )
         .header("User-Agent", "gitpro-webserver")
         .header("Accept", "application/vnd.github+json")
         .send()
@@ -96,13 +121,14 @@ async fn auth_github(
         .await
         .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
-    let github_login = user["login"]
+    let login = user["login"]
         .as_str()
         .unwrap_or("unknown");
 
-    println!("Authenticated GitHub user: {}", github_login);
+    println!("Authenticated GitHub user: {}", login);
 
-    // 3️⃣ Send GitHub token to client
+    /* Redirect back to client with GitHub token */
+
     Ok(Redirect::to(&format!(
         "http://127.0.0.1:49152/callback?token={}",
         token_body.access_token
