@@ -71,7 +71,7 @@ async fn auth_github(
     let client_secret = std::env::var("GITHUB_CLIENT_SECRET")
         .expect("GITHUB_CLIENT_SECRET missing");
 
-    /* Exchange code → GitHub access token */
+
 
     println!("Sending Token To Github");
 
@@ -100,7 +100,7 @@ async fn auth_github(
     println!("Received GitHub token: {}", token);
     println!("Access Token: {}", token.access_token);
 
-    /* Verify token by requesting user */
+
 
     let user_res = client
         .get("https://api.github.com/user")
@@ -130,7 +130,7 @@ async fn auth_github(
 
     println!("Authenticated GitHub user: {}", login);
 
-    /* Redirect back to client with GitHub token */
+
 
     Ok(Redirect::to(&format!(
         "http://127.0.0.1:49152/callback?token={}",
