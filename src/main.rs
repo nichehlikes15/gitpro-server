@@ -97,7 +97,6 @@ async fn auth_github(
         .await
         .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
-    println!("Received GitHub token: {}", token);
     println!("Access Token: {}", token.access_token);
 
 
