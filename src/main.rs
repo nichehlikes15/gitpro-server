@@ -45,7 +45,7 @@ async fn login() -> Redirect {
         std::env::var("GITHUB_CLIENT_ID").expect("GITHUB_CLIENT_ID missing");
 
     let redirect = format!(
-        "https://github.com/login/oauth/authorize?client_id={}&scope=read:user user:email",
+        "https://github.com/login/oauth/authorize?scope=user:email&client_id={}",
         client_id
     );
 
@@ -73,6 +73,8 @@ async fn auth_github(
 
     /* Exchange code → GitHub access token */
 
+    println!("Sending Token To Github");
+
     let token_res = client
         .post("https://github.com/login/oauth/access_token")
         .header("Accept", "application/json")
@@ -90,12 +92,13 @@ async fn auth_github(
         return Err(StatusCode::UNAUTHORIZED);
     }
 
-    let token_body: GitHubTokenResponse = token_res
+    let token: GitHubTokenResponse = token_res
         .json()
         .await
         .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
-    println!("Received GitHub token");
+    println!("Received GitHub token: {}", token);
+    println!("Access Token: {}", token.access_token);
 
     /* Verify token by requesting user */
 
@@ -103,7 +106,7 @@ async fn auth_github(
         .get("https://api.github.com/user")
         .header(
             "Authorization",
-            format!("token {}", token_body.access_token),
+            format!("token {}", token.access_token),
         )
         .header("User-Agent", "gitpro-webserver")
         .header("Accept", "application/vnd.github+json")
@@ -131,6 +134,6 @@ async fn auth_github(
 
     Ok(Redirect::to(&format!(
         "http://127.0.0.1:49152/callback?token={}",
-        token_body.access_token
+        token.access_token
     )))
 }
